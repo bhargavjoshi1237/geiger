@@ -6,7 +6,7 @@ import {
   useReactFlow,
   useConnection,
 } from "@xyflow/react";
-import { ArrowBigRight, ArrowRight } from "lucide-react";
+import { Link, ArrowRight } from "lucide-react";
 import Reactions from "../ui/Reactions";
 
 const ResizeHandle = () => {
@@ -28,7 +28,7 @@ const ResizeHandle = () => {
   );
 };
 
-const CustomNode = ({ id, data, selected, dragging }) => {
+const LinkNode = ({ id, data, selected, dragging }) => {
   const { setNodes } = useReactFlow();
   const connection = useConnection();
   const [isVisible, setIsVisible] = React.useState(false);
@@ -109,50 +109,55 @@ const CustomNode = ({ id, data, selected, dragging }) => {
           </div>
         </NodeResizeControl>
 
-        <div className="flex-1 w-full h-full overflow-hidden flex items-center justify-center">
-          {selected ? (
-            <textarea
-              className="w-full h-full p-4 text-start bg-transparent resize-none outline-none text-zinc-300 placeholder:text-zinc-600 placeholder:text-start font-sans block"
-              placeholder="Start typing..."
-              value={data.label || ""}
-              onChange={(evt) => {
-                setNodes((nodes) =>
-                  nodes.map((n) => {
-                    if (n.id === id) {
-                      return {
-                        ...n,
-                        data: {
-                          ...n.data,
-                          label: evt.target.value,
-                        },
-                      };
-                    }
-                    return n;
-                  }),
-                );
-              }}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-              }}
-              data-gramm="false"
-              data-gramm_editor="false"
-              data-enable-grammarly="false"
-            />
-          ) : (
-            <p
-              className={`font-sans p-4 whitespace-pre-wrap text-start w-full ${
-                data.label ? "text-zinc-300" : "text-zinc-500"
-              }`}
-            >
-              {data.label || "Start typing..."}
-            </p>
-          )}
+        <div className="flex-1 w-full h-full overflow-hidden flex items-center px-4">
+          <Link className="w-5 h-5 text-zinc-500 mr-3 flex-shrink-0" />
+          <input
+            className="w-full bg-transparent outline-none text-zinc-300 placeholder:text-zinc-600 font-sans"
+            placeholder="Enter a link URL"
+            value={data.url || ""}
+            onChange={(evt) => {
+              setNodes((nodes) =>
+                nodes.map((n) => {
+                  if (n.id === id) {
+                    return {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        url: evt.target.value,
+                      },
+                    };
+                  }
+                  return n;
+                }),
+              );
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+            }}
+          />
         </div>
 
         <Reactions
           reactions={data.reactions}
           onReactionClick={handleReactionClick}
         />
+
+        <Handle
+          type="target"
+          position={Position.Left}
+          className={`
+            !w-2 !h-full !border-0 !rounded-none !bg-transparent absolute !left-0 !top-0 !transform-none
+            ${isConnecting ? "pointer-events-auto z-50" : "pointer-events-none -z-10"}
+          `}
+          style={{
+            opacity: 0,
+          }}
+        />
+        {/* Using Center handle for connection logic often seen in Milanote clones, 
+             but CustomNode used Left/Right/Center. I'll stick to CustomNode's pattern mostly 
+             but simpler for LinkNode as it usually connects from sides? 
+             Actually CustomNode had a Center target handle covering the whole node 
+             and a Right source handle. I will replicate that. */}
 
         <Handle
           type="target"
@@ -190,4 +195,4 @@ const CustomNode = ({ id, data, selected, dragging }) => {
   );
 };
 
-export default memo(CustomNode);
+export default memo(LinkNode);

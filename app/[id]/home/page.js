@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo } from 'react';
-import { ReactFlow, Controls, Background, useNodesState, useEdgesState, addEdge, MarkerType } from '@xyflow/react';
+import React, { useMemo } from 'react';
+import { ReactFlow, Background, SelectionMode } from '@xyflow/react';
 import { useTheme } from "next-themes"
 import '@xyflow/react/dist/style.css';
 import Sidebar from '@/components/internal/layout/Sidebar';
@@ -9,91 +9,124 @@ import Topbar from '@/components/internal/layout/Topbar';
 import CustomNode from '@/components/internal/nodes/CustomNode';
 import CenterEdge from '@/components/internal/edges/CenterEdge';
 import ZoomControls from '@/components/internal/canvas/zoom-controls';
-import { useCanvasState, saveCanvasState } from '@/utils/supabase/State';
-import { DEFAULT_INITIAL_NODES, DEFAULT_INITIAL_EDGES, DEFAULT_VIEWPORT } from '@/lib/wrapers/homepage/HomePage';
+import { useHomeLogic } from '@/lib/wrapers/homepage/HomePage';
+import CanvasSkeleton from '@/components/internal/canvas/CanvasSkeleton';
+import CommentNode from '@/components/internal/nodes/CommentNode';
+import LinkNode from '@/components/internal/nodes/LinkNode';
 
 export default function Home({ params }) {
     const { id } = React.use(params);
-    const { nodes: dbNodes, edges: dbEdges, viewport: dbViewport, isLoading } = useCanvasState(id);
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [viewport, setViewport] = React.useState(DEFAULT_VIEWPORT);
-    const [isInitialized, setIsInitialized] = React.useState(false);
+    const {
+        nodes,
+        edges,
+        viewport,
+        onNodesChange,
+        onEdgesChange,
+        onConnect,
+        onNodeDragStop,
+        onMove,
+        isInitialized,
+        isLoading,
+        panOnDrag,
+        selectionOnDrag,
+        panOnScroll,
+        zoomOnScroll,
+        setEdges,
+        setNodes
+    } = useHomeLogic(id);
 
-    React.useEffect(() => {
-        if (!isLoading && !isInitialized) {
-            setNodes(dbNodes || DEFAULT_INITIAL_NODES);
-            setEdges(dbEdges || DEFAULT_INITIAL_EDGES);
-            setViewport(dbViewport || DEFAULT_VIEWPORT);
-            setIsInitialized(true);
+    const [settings, setSettings] = React.useState({
+        doubleClickToInsert: false,
+    });
+
+    const handleSettingsChange = (key, value) => {
+        setSettings(prev => ({ ...prev, [key]: value }));
+    };
+
+    const [rfInstance, setRfInstance] = React.useState(null);
+    const lastPaneClick = React.useRef(0);
+
+    const onDragOver = React.useCallback((event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    }, []);
+
+    const onDrop = React.useCallback(
+        (event) => {
+            event.preventDefault();
+            const type = event.dataTransfer.getData('application/reactflow');
+            if (typeof type === 'undefined' || !type) {
+                return;
+            }
+            const position = rfInstance.screenToFlowPosition({
+                x: event.clientX,
+                y: event.clientY,
+            });
+
+            const newNode = {
+                id: `node-${Date.now()}`,
+                type,
+                position,
+                data: { label: '' },
+                style: { width: 338, height: 68 },
+            };
+
+            setNodes((nds) => nds.concat(newNode));
+        },
+        [rfInstance, setNodes],
+    );
+
+    const onPaneClick = React.useCallback((event) => {
+        if (!settings.doubleClickToInsert) return;
+
+        const currentTime = Date.now();
+        if (currentTime - lastPaneClick.current < 300) {
+            if (rfInstance) {
+                const position = rfInstance.screenToFlowPosition({ 
+                    x: event.clientX, 
+                    y: event.clientY 
+                });
+                const newNode = {
+                    id: `node-${Date.now()}`,
+                    type: 'custom',
+                    position,
+                    data: { label: '' },
+                    style: { width: 336, height: 68 },
+                };
+                setNodes((nds) => [...nds, newNode]);
+            }
         }
-    }, [isLoading, dbNodes, dbEdges, dbViewport, isInitialized, setNodes, setEdges]);
+        lastPaneClick.current = currentTime;
+    }, [settings.doubleClickToInsert, rfInstance, setNodes]);
+
+    const selectedEdge = useMemo(() => edges.find(e => e.selected), [edges]);
+    const selectedNode = useMemo(() => nodes.find(n => n.selected), [nodes]);
+
+    const updateEdge = React.useCallback((edgeId, updates) => {
+        setEdges(eds => eds.map(e => e.id === edgeId ? { ...e, ...updates } : e));
+    }, [setEdges]);
+
+    const updateNode = React.useCallback((nodeId, updates) => {
+        setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, ...updates } : n));
+    }, [setNodes]);
+
+    const deselectEdges = React.useCallback(() => {
+        setEdges(eds => eds.map(e => ({ ...e, selected: false })));
+    }, [setEdges]);
+
+    const deselectNodes = React.useCallback(() => {
+        setNodes(nds => nds.map(n => ({ ...n, selected: false })));
+    }, [setNodes]);
 
     const nodeTypes = useMemo(() => ({
         custom: CustomNode,
+        comment: CommentNode,
+        link: LinkNode,
     }), []);
 
     const edgeTypes = useMemo(() => ({
         center: CenterEdge,
     }), []);
-
-    const onConnect = useCallback(
-        (connection) => setEdges((eds) => addEdge({ ...connection, type: 'center', markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } }, eds)),
-        [setEdges],
-    );
-
-    const onNodeDragStop = useCallback((event, node) => {
-        setNodes((nodes) =>
-            nodes.map((n) => {
-                if (n.id === node.id) {
-                    return {
-                        ...n,
-                        position: {
-                            x: Math.round(n.position.x / 15) * 15,
-                            y: Math.round(n.position.y / 15) * 15,
-                        },
-                    };
-                }
-                return n;
-            })
-        );
-    }, [setNodes]);
-
-    const saveTimerRef = React.useRef(null);
-    const stateRef = React.useRef({ nodes, edges, viewport });
-
-    React.useEffect(() => {
-        stateRef.current.nodes = nodes;
-        stateRef.current.edges = edges;
-        stateRef.current.viewport = viewport;
-    }, [nodes, edges, viewport]);
-
-    const triggerSave = useCallback(() => {
-        if (!isInitialized) return; 
-        if (saveTimerRef.current) {
-            clearTimeout(saveTimerRef.current);
-        }
-
-        const debounceTime = process.env.NEXT_PUBLIC_DEBOUNCE_TIME || 5000;
-        saveTimerRef.current = setTimeout(async () => {
-            const { nodes, edges, viewport } = stateRef.current;
-            try {
-                await saveCanvasState(id, nodes, edges, viewport);
-            } catch (error) {
-                console.error('Failed to save state:', error);
-            }
-        }, parseInt(debounceTime));
-    }, [id, isInitialized]);
-
-    React.useEffect(() => {
-        triggerSave();
-    }, [nodes, edges, triggerSave]);
-
-    const onMove = useCallback((_, newViewport) => {
-        stateRef.current.viewport = newViewport;
-        setViewport(newViewport);
-        triggerSave();
-    }, [triggerSave]);
 
     const { theme } = useTheme()
     const [mounted, setMounted] = React.useState(false)
@@ -102,27 +135,27 @@ export default function Home({ params }) {
         setMounted(true)
     }, [])
 
-    if (isLoading || !isInitialized) {
-        return (
-            <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#232323] text-white">
-                <Topbar />
-                <div className="flex-1 flex h-full relative">
-                    <Sidebar />
-                    <main className="flex-1 relative h-full bg-[#232323] flex items-center justify-center">
-                        <div className="text-gray-400">Loading canvas...</div>
-                    </main>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#232323] text-white">
-            <Topbar />
+            <Topbar settings={settings} onSettingsChange={handleSettingsChange} />
             <div className="flex-1 flex h-full relative">
-                <Sidebar />
+                <Sidebar 
+                    selectedEdge={selectedEdge} 
+                    onUpdateEdge={updateEdge} 
+                    onDeselect={deselectEdges}
+                    selectedNode={selectedNode}
+                    onUpdateNode={updateNode}
+                    onDeselectNode={deselectNodes}
+                />
                 <main className="flex-1 relative h-full bg-[#232323]">
-                    <div className="absolute inset-0">
+                    <div 
+                        className={`absolute inset-0 z-10 bg-[#232323] transition-opacity duration-700 pointer-events-none 
+                        ${(!isInitialized || isLoading) ? 'opacity-100' : 'opacity-0'}`}
+                    >
+                         <CanvasSkeleton />
+                    </div>
+
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ${(!isInitialized || isLoading) ? 'opacity-0' : 'opacity-100'}`}>
                         <ReactFlow
                             nodes={nodes}
                             edges={edges}
@@ -131,6 +164,10 @@ export default function Home({ params }) {
                             onConnect={onConnect}
                             onNodeDragStop={onNodeDragStop}
                             onMove={onMove}
+                            onInit={setRfInstance}
+                            onPaneClick={onPaneClick}
+                            onDragOver={onDragOver}
+                            onDrop={onDrop}
                             nodeTypes={nodeTypes}
                             edgeTypes={edgeTypes}
                             colorMode="dark"
@@ -139,6 +176,13 @@ export default function Home({ params }) {
                             proOptions={{ hideAttribution: true }}
                             minZoom={0.1}
                             maxZoom={2}
+                            deleteKeyCode={['Backspace', 'Delete']}
+                            panOnDrag={panOnDrag}
+                            selectionOnDrag={selectionOnDrag}
+                            panOnScroll={panOnScroll}
+                            zoomOnScroll={zoomOnScroll}
+                            zoomOnDoubleClick={false}
+                            selectionMode={SelectionMode.Partial}
                         >
                             <Background
                                 color="#373737"
