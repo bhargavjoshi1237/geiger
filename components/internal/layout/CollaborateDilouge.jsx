@@ -10,19 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Users2,
-  Copy,
-  Check,
-  Trash2,
-  Play,
-  LogIn,
-  LucideDoorClosed,
-  UserMinus,
-} from "lucide-react";
+import { Users2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+import HostTab from "../colab/HostTab";
+import MembersTab from "../colab/MembersTab";
+import JoinTab from "../colab/JoinTab";
+import MergeTab from "../colab/MergeTab";
 
 export default function CollaborateDilouge({
   id,
@@ -33,15 +28,20 @@ export default function CollaborateDilouge({
   sessionData,
   role,
   onAcceptRequest,
+  onKickMember,
+  onLeaveSession,
+  onMerge,
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [currentUser, setCurrentUser] = useState(null);
-
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("host");
   const [isStarting, setIsStarting] = useState(false);
   const [sessionCodeInput, setSessionCodeInput] = useState("");
+  const [mergeSessions, setMergeSessions] = useState([]);
+  const [selectedMergeSession, setSelectedMergeSession] = useState(null);
+  const [mergeDiff, setMergeDiff] = useState(null);
 
   useEffect(() => {
     async function getUser() {
@@ -50,6 +50,120 @@ export default function CollaborateDilouge({
     }
     getUser();
   }, [supabase]);
+
+  useEffect(() => {
+    if (activeTab === "merge" && currentUser) {
+      async function fetchHostedSessions() {
+        const { data } = await supabase
+          .from("collab")
+          .select("*")
+          .eq("host", currentUser.id)
+          .order("created_at", { ascending: false });
+        if (data) setMergeSessions(data);
+      }
+      fetchHostedSessions();
+    }
+  }, [activeTab, currentUser, supabase]);
+
+  const computeDiff = (session) => {
+    try {
+      const sNodes =
+        typeof session.state_nodes === "string"
+          ? JSON.parse(session.state_nodes)
+          : session.state_nodes || [];
+      const sEdges =
+        typeof session.state_edges === "string"
+          ? JSON.parse(session.state_edges)
+          : session.state_edges || [];
+      const currentIds = new Set(nodes.map((n) => n.id));
+      const newNodes = sNodes.filter((n) => !currentIds.has(n.id));
+      const changedNodes = sNodes.filter((n) => {
+        if (!currentIds.has(n.id)) return false;
+        const current = nodes.find((cn) => cn.id === n.id);
+        return JSON.stringify(n) !== JSON.stringify(current);
+      });
+      const sessionIds = new Set(sNodes.map((n) => n.id));
+      const deletedNodes = nodes.filter((n) => !sessionIds.has(n.id));
+
+      setMergeDiff({
+        newNodes,
+        changedNodes,
+        deletedNodes,
+        sNodes,
+        sEdges,
+      });
+    } catch (e) {
+      console.error("Error computing diff", e);
+      toast.error("Failed to compute diff");
+    }
+  };
+
+  const handleMergeSessionSelect = (session) => {
+    setSelectedMergeSession(session);
+    computeDiff(session);
+  };
+
+  const confirmMerge = async () => {
+    if (!mergeDiff || !onMerge) return;
+    const rollbackState = {
+      nodes: nodes,
+      edges: edges,
+      merged_at: new Date().toISOString(),
+    };
+
+    if (selectedMergeSession) {
+      const { error } = await supabase
+        .from("collab")
+        .update({ rollback: rollbackState })
+        .eq("id", selectedMergeSession.id);
+
+      if (error) {
+        console.error("Error saving rollback state:", error);
+        toast.error("Failed to save rollback state");
+      } else {
+        const updatedSession = {
+          ...selectedMergeSession,
+          rollback: rollbackState,
+        };
+        setMergeSessions((prev) =>
+          prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)),
+        );
+      }
+    }
+
+    const combinedNodes = [...mergeDiff.sNodes, ...mergeDiff.deletedNodes];
+    const sessionEdgeIds = new Set(mergeDiff.sEdges.map((e) => e.id));
+    const localUniqueEdges = edges.filter((e) => !sessionEdgeIds.has(e.id));
+    const combinedEdges = [...mergeDiff.sEdges, ...localUniqueEdges];
+    onMerge(combinedNodes, combinedEdges);
+    toast.success("Merged successfully");
+    onOpenChange(false);
+    setSelectedMergeSession(null);
+  };
+
+  const handleRollback = async () => {
+    if (!selectedMergeSession?.rollback || !onMerge) return;
+    const { nodes: rollbackNodes, edges: rollbackEdges } =
+      selectedMergeSession.rollback;
+    onMerge(rollbackNodes, rollbackEdges);
+    const { error } = await supabase
+      .from("collab")
+      .update({ rollback: null })
+      .eq("id", selectedMergeSession.id);
+
+    if (error) {
+      console.error("Error clearing rollback state:", error);
+      toast.error("Failed to clear rollback state");
+    } else {
+      const updatedSession = { ...selectedMergeSession, rollback: null };
+      setMergeSessions((prev) =>
+        prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)),
+      );
+    }
+    onOpenChange(false);
+    setSelectedMergeSession(null);
+    toast.success("Rolled back successfully");
+  };
 
   const isSessionActive = !!sessionData;
   const isHost = role === "host";
@@ -103,10 +217,12 @@ export default function CollaborateDilouge({
       const data = await response.json();
       if (data.sessionId) {
         router.push(`/colab/${data.sessionId}`);
+        toast.success("Session started");
         onOpenChange(false);
       }
     } catch (e) {
       console.error(e);
+      toast.error("Failed to start session");
     }
     setIsStarting(false);
   };
@@ -114,6 +230,7 @@ export default function CollaborateDilouge({
   const copyToClipboard = () => {
     navigator.clipboard.writeText(sessionCode);
     setCopied(true);
+    toast.success("Copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -137,14 +254,30 @@ export default function CollaborateDilouge({
       if (response.ok && data.sessionId) {
         router.push(`/colab/${data.sessionId}`);
         onOpenChange(false);
+        toast.success("Joined session");
       } else {
-        setJoinError(data.error || "Invalid session code");
+        const err = data.error || "Invalid session code";
+        setJoinError(err);
+        toast.error(err);
       }
     } catch (e) {
       setJoinError("Failed to join session");
+      toast.error("Failed to join session");
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const handleLeave = async () => {
+    if (onLeaveSession) {
+      await onLeaveSession();
+    }
+    router.push(`/${currentUser?.id}/home`);
+  };
+
+  const handleEndSession = async () => {
+    router.push(`/${currentUser?.id}/home`);
+    toast.info("Session ended");
   };
 
   return (
@@ -185,9 +318,10 @@ export default function CollaborateDilouge({
 
         <div className="flex border-b border-zinc-800 bg-[#1e1e1e]">
           {[
-            (!isSessionActive || isHost) && { id: "host", label: "Host" },
+            { id: "host", label: isSessionActive ? "Session" : "Host" },
             { id: "members", label: "Members" },
-            !isSessionActive && { id: "join", label: "Join" },
+            (!isSessionActive || !isHost) && { id: "join", label: "Join" },
+            !isSessionActive && { id: "merge", label: "Merge" },
           ]
             .filter(Boolean)
             .map((tab) => (
@@ -208,295 +342,53 @@ export default function CollaborateDilouge({
 
         <div className="p-4 bg-[#1e1e1e] h-[300px]">
           {activeTab === "host" && (
-            <div className="flex flex-col items-center justify-center h-[320px] py-6 px-4">
-              {!isSessionActive ? (
-                <div className="text-center space-y-5 animate-in fade-in -mt-10">
-                  <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center mx-auto">
-                    <Play className="w-6 h-6 text-zinc-400 ml-0.5" />
-                  </div>
-
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-zinc-100">
-                      Start a Session
-                    </h3>
-                    <p className="text-sm text-zinc-500 max-w-[260px] mx-auto">
-                      Create a live collaborative workspace and invite others
-                      instantly.
-                    </p>
-                  </div>
-
-                  <Button
-                    onClick={startSession}
-                    disabled={isStarting}
-                    className="bg-zinc-100 text-black hover:bg-zinc-200 min-w-[150px] transition-all active:scale-95"
-                  >
-                    {isStarting ? "Starting…" : "Start Session"}
-                  </Button>
-                </div>
-              ) : (
-                <div className="w-full max-w-sm space-y-6 animate-in fade-in zoom-in-95">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                        Session Active
-                      </span>
-                    </div>
-
-                    <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
-                      <button
-                        onClick={copyToClipboard}
-                        className="relative w-full flex flex-col items-center justify-center gap-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700/50 rounded-xl p-6 transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-emerald-900/10"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-xl font-bold text-zinc-100 tracking-[0.15em] select-all">
-                            {sessionCode}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium group-hover:text-emerald-500/80 transition-colors">
-                          {copied ? (
-                            <>
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Copied to clipboard</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Click to copy code</span>
-                            </>
-                          )}
-                        </div>
-                      </button>
-                    </div>
-
-                    <p className="text-[11px] text-zinc-600 text-center px-4">
-                      Share this code with team members to let them join your
-                      workspace instantly.
-                    </p>
-                  </div>
-
-                  <div className="text-center space-y-1">
-                    {isHost && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          router.push("/");
-                        }}
-                        className="h-8 text-xs"
-                      >
-                        <LucideDoorClosed className="w-5 h-5 mr-1 text-white" />
-                        <p className="-mt-0.5 text-white">End Session</p>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <HostTab
+              isSessionActive={isSessionActive}
+              startSession={startSession}
+              isStarting={isStarting}
+              sessionCode={sessionCode}
+              copyToClipboard={copyToClipboard}
+              copied={copied}
+              isHost={isHost}
+              handleEndSession={handleEndSession}
+              handleLeave={handleLeave}
+            />
           )}
 
           {activeTab === "members" && (
-            <div className="h-full flex flex-col">
-              {!isSessionActive ? (
-                <div className="flex flex-col items-center justify-center h-[200px] text-zinc-500 space-y-2">
-                  <Users2 className="w-8 h-8 opacity-20" />
-                  <p className="text-sm">No active session</p>
-                  <p className="text-xs text-zinc-600">
-                    Start or join a session to see members
-                  </p>
-                </div>
-              ) : (
-                <div className="flex-1 -mx-2">
-                  <ScrollArea className="h-[300px] px-2">
-                    {isHost && requestedMembers.length > 0 && (
-                      <div className="mb-6">
-                        <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
-                          Requests
-                          <Badge
-                            variant="secondary"
-                            className="bg-zinc-800 text-zinc-400 text-[10px] h-5 px-1.5"
-                          >
-                            {requestedMembers.length}
-                          </Badge>
-                        </h4>
-                        <div className="space-y-1">
-                          {requestedMembers.map((user) => (
-                            <div
-                              key={user.id}
-                              className="flex items-center justify-between p-2 rounded bg-zinc-800/30 border border-zinc-800/50"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-medium text-zinc-400">
-                                  {user.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <div className="text-sm font-medium text-zinc-200">
-                                    {user.name}
-                                  </div>
-                                  <div className="text-xs text-zinc-500">
-                                    Wants to join
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() =>
-                                    onAcceptRequest && onAcceptRequest(user.id)
-                                  }
-                                  className="h-7 w-7 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">
-                        In Session ({joinedMembers.length})
-                      </h4>
-                      <div className="space-y-1">
-                        {joinedMembers.map((user) => (
-                          <div
-                            key={user.id}
-                            className="flex items-center justify-between p-2 rounded hover:bg-zinc-800/50 transition-colors group"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative">
-                                <div
-                                  className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-medium text-zinc-300 border border-zinc-700"
-                                  style={
-                                    user.color
-                                      ? {
-                                          borderColor: user.color,
-                                          color: user.color,
-                                        }
-                                      : {}
-                                  }
-                                >
-                                  {user.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div
-                                  className={cn(
-                                    "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#1e1e1e]",
-                                    user.status === "online"
-                                      ? "bg-emerald-500"
-                                      : "bg-amber-500",
-                                  )}
-                                />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-zinc-200 flex items-center gap-2">
-                                  {user.name}
-                                  {user.isMe && (
-                                    <span className="text-zinc-500 text-xs">
-                                      (You)
-                                    </span>
-                                  )}
-                                  {user.role === "Owner" && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-[10px] h-4 py-0 px-1 border-zinc-700 text-zinc-400 font-normal"
-                                    >
-                                      Host
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="text-xs text-zinc-500">
-                                  {user.role}
-                                </div>
-                              </div>
-                            </div>
-                            {isHost && !user.isMe && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 hover:bg-red-900/20"
-                              >
-                                <UserMinus className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </div>
-              )}
-              {!isHost && isSessionActive && (
-                <div className="p-4 mt-auto">
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => router.push("/")}
-                  >
-                    <LucideDoorClosed className="w-4 h-4 mr-2" />
-                    Leave Session
-                  </Button>
-                </div>
-              )}
-            </div>
+            <MembersTab
+              isSessionActive={isSessionActive}
+              isHost={isHost}
+              requestedMembers={requestedMembers}
+              joinedMembers={joinedMembers}
+              onAcceptRequest={onAcceptRequest}
+              onKickMember={onKickMember}
+              handleLeave={handleLeave}
+            />
           )}
 
           {activeTab === "join" && (
-            <div className="space-y-6 flex flex-col justify-center h-full pl-10 pr-10">
-              {isSessionActive ? (
-                <div className="text-center space-y-2 py-8">
-                  <p className="text-sm text-zinc-300">
-                    You are currently in a session.
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    Leave the current session to join another.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="gap-2 flex flex-col">
-                    <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                      Enter Session Code
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="GEIGER-XXXX-XXXX"
-                      value={sessionCodeInput}
-                      onChange={(e) => setSessionCodeInput(e.target.value)}
-                      className={cn(
-                        "w-full bg-zinc-900 border rounded-md px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors font-mono",
-                        joinError
-                          ? "border-red-500/50 focus:border-red-500"
-                          : "border-zinc-800",
-                      )}
-                    />
-                    {joinError && (
-                      <p className="text-xs text-red-400">{joinError}</p>
-                    )}
-                  </div>
-                  <div className="space-y-4">
-                    <Button
-                      onClick={joinByCode}
-                      disabled={isJoining || !sessionCodeInput.trim()}
-                      className="w-full bg-zinc-100 text-black hover:bg-zinc-200"
-                    >
-                      <LogIn className="w-4 h-4 mr-2" />
-                      {isJoining ? "Joining..." : "Join Session"}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
+            <JoinTab
+              isSessionActive={isSessionActive}
+              sessionCodeInput={sessionCodeInput}
+              setSessionCodeInput={setSessionCodeInput}
+              joinError={joinError}
+              joinByCode={joinByCode}
+              isJoining={isJoining}
+            />
+          )}
+
+          {activeTab === "merge" && (
+            <MergeTab
+              selectedMergeSession={selectedMergeSession}
+              mergeSessions={mergeSessions}
+              handleMergeSessionSelect={handleMergeSessionSelect}
+              mergeDiff={mergeDiff}
+              confirmMerge={confirmMerge}
+              setSelectedMergeSession={setSelectedMergeSession}
+              handleRollback={handleRollback}
+              currentUser={currentUser}
+            />
           )}
         </div>
 

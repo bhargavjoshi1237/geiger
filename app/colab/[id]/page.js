@@ -12,6 +12,7 @@ import { useCollabLogic } from '@/lib/collab/hooks/useCollabLogic';
 import CanvasSkeleton from '@/components/internal/canvas/CanvasSkeleton';
 import CommentNode from '@/components/internal/nodes/CommentNode';
 import LinkNode from '@/components/internal/nodes/LinkNode';
+import UserDrawer from '@/components/internal/layout/UserDrawer';
 
 export default function CollabPage({ params }) {
     const { id } = React.use(params);
@@ -32,7 +33,9 @@ export default function CollabPage({ params }) {
         role,
         acceptRequest,
         requestAccess,
-        currentUser
+        currentUser,
+        kickMember,
+        leaveSession
     } = useCollabLogic(id);
 
     const [settings, setSettings] = React.useState({
@@ -137,6 +140,8 @@ export default function CollabPage({ params }) {
                 sessionData={sessionData} 
                 role={role}
                 onAcceptRequest={acceptRequest}
+                onKickMember={kickMember}
+                onLeaveSession={leaveSession}
             />
             <div className="flex-1 flex h-full relative">
                 <Sidebar 
@@ -184,7 +189,6 @@ export default function CollabPage({ params }) {
                             panOnScroll={true}
                             zoomOnScroll={true}
                             zoomOnDoubleClick={false}
-                            // Read-only logic: allow drag/connect only if host or editor
                             nodesDraggable={role === 'host' || role === 'editor'}
                             nodesConnectable={role === 'host' || role === 'editor'}
                             elementsSelectable={true} 
@@ -192,10 +196,13 @@ export default function CollabPage({ params }) {
                             <Background color="#373737" gap={12} size={1} variant="dots" />
                             <ZoomControls />
                         </ReactFlow>
-                        {role === 'viewer' && (
-                             <div className="absolute bottom-8 w-full flex justify-center z-50 pointer-events-none">
-                            </div>
-                        )}
+                        <UserDrawer 
+                            sessionData={sessionData} 
+                            role={role} 
+                            currentUser={currentUser} 
+                            onKickMember={kickMember} 
+                            onLeaveSession={leaveSession} 
+                        />
                     </div>  
                 </main>
             </div>

@@ -20,7 +20,7 @@ export function AuthForm() {
 
     if (result?.error) {
       setIsLoading(false);
-      toast(result.error);
+      toast.error(result.error);
     }
   }
 

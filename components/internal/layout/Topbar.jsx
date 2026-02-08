@@ -13,6 +13,9 @@ import {
 import SettingsDialog from "../settings/SettingsDilouge";
 import CollaborateDilouge from "./CollaborateDilouge";
 import DigitalClock from "./DigitalClock";
+import NotificationDialog from "./NotificationDialog";
+import AppDialog from "./AppDialog";
+import HelpDialog from "./HelpDialog";
 
 export default function Topbar({
   id,
@@ -23,9 +26,15 @@ export default function Topbar({
   sessionData,
   role,
   onAcceptRequest,
+  onKickMember,
+  onLeaveSession,
+  onMerge,
 }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCollaborateOpen, setIsCollaborateOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isAppOpen, setIsAppOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   return (
     <>
@@ -83,28 +92,12 @@ export default function Topbar({
                   <span className={`absolute inset-0 rounded-lg`}></span>
                 </>
               )}
-              <div className="relative">
+              <div className="relative p-2 hover:bg-zinc-800 rounded transition-colors hover:text-white">
                 <Users2
                   className={`w-4 h-4 transition-transform duration-300 ${
                     sessionData ? "drop-shadow-sm" : ""
                   }`}
                 />
-              </div>
-
-              <div
-                className={`absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] font-medium tracking-wide uppercase whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none ${
-                  sessionData
-                    ? role === "host"
-                      ? "bg-zinc-500/20 text-zinc-300"
-                      : "bg-emerald-500/20 text-emerald-300"
-                    : "bg-zinc-800 text-zinc-300"
-                }`}
-              >
-                {sessionData
-                  ? role === "host"
-                    ? "Hosting"
-                    : "Live"
-                  : "Collab"}
               </div>
             </button>
           </div>
@@ -113,22 +106,32 @@ export default function Topbar({
 
           <div className="flex items-center gap-1">
             <button
+              onClick={() => setIsAppOpen(true)}
               className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
               title="Mobile"
             >
               <Smartphone className="w-4 h-4" />
             </button>
             <button
+              onClick={() => setIsHelpOpen(true)}
               className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
               title="Help"
             >
               <HelpCircle className="w-5 h-5" />
             </button>
             <button
-              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+              onClick={() => setIsNotificationOpen(true)}
+              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors relative"
               title="Notifications"
             >
               <Bell className="w-5 h-5" />
+              {sessionData?.joiners &&
+                Object.values(sessionData.joiners).some(
+                  (j) => j.status === "requested",
+                ) &&
+                role === "host" && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                )}
             </button>
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -155,7 +158,20 @@ export default function Topbar({
         sessionData={sessionData}
         role={role}
         onAcceptRequest={onAcceptRequest}
+        onKickMember={onKickMember}
+        onLeaveSession={onLeaveSession}
+        onMerge={onMerge}
       />
+      <NotificationDialog
+        open={isNotificationOpen}
+        onOpenChange={setIsNotificationOpen}
+        sessionData={sessionData}
+        role={role}
+        onAcceptRequest={onAcceptRequest}
+        onKickMember={onKickMember}
+      />
+      <AppDialog open={isAppOpen} onOpenChange={setIsAppOpen} />
+      <HelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
     </>
   );
 }

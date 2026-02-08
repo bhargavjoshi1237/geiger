@@ -144,9 +144,21 @@ export default function Home({ params }) {
         }
     }, [isInitialized, rfInstance, viewport]);
 
+    const handleMerge = React.useCallback((newNodes, newEdges) => {
+        setNodes(newNodes);
+        setEdges(newEdges);
+    }, [setNodes, setEdges]);
+
     return (
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#232323] text-white">
-            <Topbar id={id} settings={settings} onSettingsChange={handleSettingsChange} nodes={nodes} edges={edges} />
+            <Topbar 
+                id={id} 
+                settings={settings} 
+                onSettingsChange={handleSettingsChange} 
+                nodes={nodes} 
+                edges={edges} 
+                onMerge={handleMerge}
+            />
             <div className="flex-1 flex h-full relative">
                 <Sidebar 
                     selectedEdge={selectedEdge} 
