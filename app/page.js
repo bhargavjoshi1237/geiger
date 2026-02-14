@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Box, Zap, Share2, Layers, Cpu, Globe } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 
@@ -17,7 +18,7 @@ export default async function Home() {
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 flex items-center justify-center">
-              <img src="/logo1.svg" alt="Logo" width={24} height={24} />
+              <Image src="/logo1.svg" alt="Logo" width={24} height={24} />
             </div>
             <span className="font-bold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-400">Geiger Studios</span>
           </div>

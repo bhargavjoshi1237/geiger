@@ -28,7 +28,10 @@ export function useCanvasState(userId, boardId) {
 
         async function loadState() {
             try {
-                const url = boardId ? `/api/load-state?boardId=${boardId}` : '/api/load-state';
+                const isProd = process.env.NODE_ENV === 'production';
+                const basePath = isProd ? (process.env.NEXT_PUBLIC_BASE_PATH || '/notes') : '';
+                const baseApiUrl = `${basePath}/api/load-state`;
+                const url = boardId ? `${baseApiUrl}?boardId=${boardId}` : baseApiUrl;
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
@@ -82,8 +85,10 @@ export function useCanvasState(userId, boardId) {
  * @param {string} boardId - Optional board ID
  */
 export async function saveCanvasState(userId, nodes, edges, viewport, boardId) {
+    const isProd = process.env.NODE_ENV === 'production';
+    const basePath = isProd ? (process.env.NEXT_PUBLIC_BASE_PATH || '/notes') : '';
     try {
-        await fetch('/api/save-state', {
+        await fetch(`${basePath}/api/save-state`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             keepalive: true,
