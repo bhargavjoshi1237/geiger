@@ -22,14 +22,14 @@ export default function AppDialog({ open, onOpenChange }) {
         </DialogHeader>
 
         <ScrollArea className="h-[400px]">
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-3 opacity-60 mt-20">
-            <div className="text-center space-y-5 animate-in fade-in">
-              <Smartphone className="w-12 h-12 opacity-20 ml-auto mr-auto" />
+          <div className="flex flex-col mt-10 items-center justify-center h-full p-8 text-center space-y-3 opacity-60">
+            <div className="text-center space-y-5 animate-in fade-in -mt-10">
+              <Smartphone className="w-8 h-8 opacity-20 ml-auto mr-auto" />
             </div>
             <p className="text-sm font-medium text-zinc-300">
               Coming Soon to iOS & Android
             </p>
-            <p className="text-xs text-zinc-500 max-w-[200px] mx-auto">
+            <p className="text-xs text-zinc-500">
               We're building a seamless mobile experience for you. Stay tuned
               for updates!
             </p>

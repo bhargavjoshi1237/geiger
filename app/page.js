@@ -19,7 +19,7 @@ export default async function Home() {
             <div className="w-8 h-8 flex items-center justify-center">
               <img src="/logo1.svg" alt="Logo" width={24} height={24} />
             </div>
-            <span className="font-bold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-400">Geiger</span>
+            <span className="font-bold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-400">Geiger Studios</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
             <Link href="#features" className="hover:text-zinc-100 transition-colors">Features</Link>
@@ -42,22 +42,13 @@ export default async function Home() {
                 Sign In
               </Link>
             )}
-            <Link
-              href={userId ? `/${userId}/home` : "/login"}
-              className="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-zinc-100 text-zinc-950 text-sm font-bold rounded-full hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all duration-300 transform hover:-translate-y-0.5"
-            >
-              {userId ? "Open Workspace" : "Get Started"}
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
           </div>
         </div>
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-20">
-        {/* Hero Section */}
         <section className="relative py-20 md:py-32 px-6 overflow-hidden">
           <div className="container mx-auto max-w-6xl flex flex-col items-center text-center">
-            
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-900/50 border border-zinc-800 text-xs font-medium text-zinc-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 backdrop-blur-sm">
               <span className="relative flex h-2 w-2 mr-1">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -65,18 +56,15 @@ export default async function Home() {
               </span>
               v1.0 is now live
             </div>
-
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8 text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-600 animate-in fade-in slide-in-from-bottom-6 duration-1000 fill-mode-both drop-shadow-2xl">
-              Think at the speed <br /> of thought.
-            </h1>
-            
+              Think at the speed <br /> of Light.
+            </h1>          
             <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 fill-mode-both font-light">
               Geiger is the stealth workspace for high-performance teams. 
               <span className="text-zinc-100 font-medium"> Infinite canvas</span>, 
               <span className="text-zinc-100 font-medium"> real-time collaboration</span>, 
               and powerful tools to map out your next big idea.
             </p>
-
             <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both w-full max-w-md mx-auto">
               <Link
                 href={userId ? `/${userId}/home` : "/login"}
@@ -92,14 +80,9 @@ export default async function Home() {
                 View Features
               </Link>
             </div>
-
-            {/* Abstract visual representation */}
             <div className="relative w-full max-w-5xl mt-24 aspect-[16/9] bg-zinc-900/30 rounded-2xl border border-zinc-800/50 backdrop-blur-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-1000 delay-500 group">
               <div className="absolute inset-0 bg-grid-zinc-700/10 [mask-image:linear-gradient(to_bottom,transparent,black)]" />
-              
-              {/* Central UI Mockup */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] h-[80%] border border-zinc-700/30 rounded-xl bg-zinc-950/90 shadow-2xl flex flex-col overflow-hidden transition-all duration-700 group-hover:scale-[1.02] group-hover:border-zinc-600/50">
-                {/* Mock Window Header */}
                 <div className="h-12 border-b border-zinc-800/50 flex items-center px-6 gap-2 bg-zinc-900/50 justify-between">
                   <div className="flex gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
@@ -109,24 +92,18 @@ export default async function Home() {
                   <div className="h-6 w-32 bg-zinc-800/50 rounded-md"></div>
                   <div className="w-6 h-6 rounded-full bg-zinc-800/50"></div>
                 </div>
-                {/* Mock Content */}
                 <div className="flex-1 p-8 grid grid-cols-12 gap-6 relative">
-                  {/* Sidebar Mock */}
                   <div className="hidden md:block col-span-2 h-full rounded-lg bg-zinc-900/30 border border-zinc-800/50 flex flex-col gap-3 p-3">
                      <div className="h-8 w-full bg-zinc-800/50 rounded animate-pulse" style={{animationDelay: "0ms"}}></div>
                      <div className="h-8 w-full bg-zinc-800/30 rounded animate-pulse" style={{animationDelay: "100ms"}}></div>
                      <div className="h-8 w-full bg-zinc-800/30 rounded animate-pulse" style={{animationDelay: "200ms"}}></div>
                      <div className="mt-auto h-24 w-full bg-zinc-800/20 rounded"></div>
                   </div>
-                  
-                  {/* Canvas Area Mock */}
                   <div className="col-span-12 md:col-span-10 grid grid-cols-2 gap-6 relative">
-                     {/* Connecting Lines (svg overlay) */}
                      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
                         <path d="M 150 80 Q 250 80 400 150" stroke="white" strokeWidth="2" fill="none" strokeDasharray="5,5" />
                         <path d="M 450 180 Q 550 250 600 120" stroke="white" strokeWidth="2" fill="none" strokeDasharray="5,5" />
                      </svg>
-
                      <div className="h-40 rounded-xl bg-zinc-800/40 border border-zinc-700/50 p-4 relative overflow-hidden group/card hover:border-zinc-500 transition-colors">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
                         <div className="h-4 w-1/3 bg-zinc-600/50 rounded mb-3"></div>
@@ -140,7 +117,6 @@ export default async function Home() {
                             <div className="w-6 h-6 rounded-full bg-zinc-500 border border-zinc-800"></div>
                         </div>
                      </div>
-                     
                      <div className="h-40 translate-y-12 rounded-xl bg-zinc-800/40 border border-zinc-700/50 p-4 relative overflow-hidden group/card hover:border-zinc-500 transition-colors">
                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
                          <div className="h-4 w-1/2 bg-zinc-600/50 rounded mb-3"></div>
@@ -152,15 +128,11 @@ export default async function Home() {
                   </div>
                 </div>
               </div>
-
-               {/* Decorative Glows */}
-               <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px]" />
-               <div className="absolute -top-40 -left-20 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
+              <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px]" />
+              <div className="absolute -top-40 -left-20 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
             </div>
           </div>
         </section>
-
-        {/* Features Grid */}
         <section id="features" className="py-32 px-6 relative bg-zinc-950">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-24">
@@ -169,7 +141,6 @@ export default async function Home() {
                 Built for speed and extensibility. Geiger adapts to your workflow, not the other way around.
               </p>
             </div>
-
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
               {[
                 {
@@ -222,8 +193,6 @@ export default async function Home() {
             </div>
           </div>
         </section>
-
-        {/* Social Proof / Stats */}
         <section className="py-20 border-y border-zinc-900 bg-zinc-900/20">
              <div className="container mx-auto max-w-6xl px-6">
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -241,8 +210,6 @@ export default async function Home() {
                  </div>
              </div>
         </section>
-
-        {/* CTA Section */}
         <section className="py-32 px-6 relative overflow-hidden">
              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-900/50" />
              <div className="container mx-auto text-center relative z-10">
