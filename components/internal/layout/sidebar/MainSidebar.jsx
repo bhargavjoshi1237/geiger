@@ -5,7 +5,7 @@ import {
   StickyNote,
   Link,
   CheckSquare,
-  Minus,
+  FileText,
   LayoutDashboard,
   Columns,
   MessageSquare,
@@ -39,8 +39,18 @@ export const MainSidebar = () => {
         onDragStart={(event) => onDragStart(event, "link")}
       />
       <SidebarButton icon={CheckSquare} label="To-do" />
-      <SidebarButton icon={Minus} label="Line" />
-      <SidebarButton icon={LayoutDashboard} label="Board" />
+      <SidebarButton
+        icon={FileText}
+        label="Document"
+        draggable
+        onDragStart={(event) => onDragStart(event, "document")}
+      />
+      <SidebarButton
+        icon={LayoutDashboard}
+        label="Board"
+        draggable
+        onDragStart={(event) => onDragStart(event, "board")}
+      />
       <SidebarButton icon={Columns} label="Column" />
 
       <SidebarButton

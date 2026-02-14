@@ -9,6 +9,7 @@ import {
   Bell,
   Settings,
   Users2,
+  LucideChevronRight,
 } from "lucide-react";
 import SettingsDialog from "../settings/SettingsDilouge";
 import CollaborateDilouge from "./CollaborateDilouge";
@@ -29,6 +30,8 @@ export default function Topbar({
   onKickMember,
   onLeaveSession,
   onMerge,
+  breadcrumbs,
+  onBreadcrumbClick,
 }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCollaborateOpen, setIsCollaborateOpen] = useState(false);
@@ -41,9 +44,28 @@ export default function Topbar({
       <header className="shadow-lg h-12 w-full bg-[#1e1e1e] flex items-center justify-between px-4 z-[100] border-b border-zinc-800/50">
         <div className="flex items-center gap-2">
           <img src="/logo1.svg" className="w-4 h-4" alt="" />
-          <div className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer p-1 rounded hover:bg-zinc-800">
+          <div
+            onClick={() => onBreadcrumbClick && onBreadcrumbClick(null)}
+            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer p-1 rounded hover:bg-zinc-800"
+          >
             <span className="text-sm font-medium text-white">Home</span>
           </div>
+          {breadcrumbs &&
+            breadcrumbs.map((crumb) => (
+              <React.Fragment key={crumb.id}>
+                <LucideChevronRight className="w-4 h-4 text-zinc-500" />
+                <div
+                  onClick={() =>
+                    onBreadcrumbClick && onBreadcrumbClick(crumb.id)
+                  }
+                  className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer p-1 rounded hover:bg-zinc-800"
+                >
+                  <span className="text-sm font-medium text-white">
+                    {crumb.name}
+                  </span>
+                </div>
+              </React.Fragment>
+            ))}
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           {(settings?.showClock ?? true) && (

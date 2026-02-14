@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
  * @param {string} userId - The user ID
  * @returns {Object} { nodes, edges, viewport, isLoading, error }
  */
-export function useCanvasState(userId) {
+export function useCanvasState(userId, boardId) {
     const [state, setState] = useState({
         nodes: null,
         edges: null,
@@ -17,9 +17,19 @@ export function useCanvasState(userId) {
     });
 
     useEffect(() => {
+        // Reset state immediately when switching context to prevent stale data
+        setState(prev => ({ 
+            ...prev, 
+            nodes: null, 
+            edges: null, 
+            viewport: null, 
+            isLoading: true 
+        }));
+
         async function loadState() {
             try {
-                const response = await fetch('/api/load-state', {
+                const url = boardId ? `/api/load-state?boardId=${boardId}` : '/api/load-state';
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -39,6 +49,7 @@ export function useCanvasState(userId) {
                     nodes: parsedNodes,
                     edges: parsedEdges,
                     viewport: parsedViewport,
+                    name: data.name,
                     isLoading: false,
                     error: null
                 });
@@ -57,7 +68,7 @@ export function useCanvasState(userId) {
         if (userId) {
             loadState();
         }
-    }, [userId]);
+    }, [userId, boardId]);
 
     return state;
 }
@@ -68,17 +79,20 @@ export function useCanvasState(userId) {
  * @param {Array} nodes - The nodes array
  * @param {Array} edges - The edges array
  * @param {Object} viewport - The viewport object
+ * @param {string} boardId - Optional board ID
  */
-export async function saveCanvasState(userId, nodes, edges, viewport) {
+export async function saveCanvasState(userId, nodes, edges, viewport, boardId) {
     try {
         await fetch('/api/save-state', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            keepalive: true,
             body: JSON.stringify({
                 userId,
                 nodes,
                 edges,
-                viewport
+                viewport,
+                boardId
             })
         });
         console.log('State saved to DB');
