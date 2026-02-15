@@ -44,11 +44,20 @@ export default function Topbar({
     <>
       <header className="shadow-lg h-12 w-full bg-[#1e1e1e] flex items-center justify-between px-4 z-[100] border-b border-zinc-800/50">
         <div className="flex items-center gap-2">
-          <img
-            src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/logo1.svg`}
-            className="w-4 h-4"
-            alt=""
-          />
+          <a
+            className="p-1 rounded hover:bg-zinc-800"
+            href={
+              process.env.NODE_ENV === "development"
+                ? "http://localhost:3000"
+                : "/"
+            }
+          >
+            <img
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/logo1.svg`}
+              className="w-4 h-4"
+              alt=""
+            />
+          </a>
           <div
             onClick={() => onBreadcrumbClick && onBreadcrumbClick(null)}
             className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer p-1 rounded hover:bg-zinc-800"
