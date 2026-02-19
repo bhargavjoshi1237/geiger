@@ -103,7 +103,7 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
   useEffect(() => {
     if (isOpen && documentId) {
       setLoading(true);
-      fetch(`/api/documents?id=${documentId}`)
+      fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/documents?id=${documentId}`)
         .then((res) => {
           if (!res.ok) throw new Error("Failed to load document");
           return res.json();
@@ -132,7 +132,7 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
     setSaveStatus("saving");
 
     try {
-      const res = await fetch("/api/documents", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/documents`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -220,7 +220,7 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
     setSaveStatus("saving");
 
     try {
-      const res = await fetch("/api/documents", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/documents`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: documentId, content: contentToSave }),

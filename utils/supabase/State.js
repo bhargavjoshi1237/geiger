@@ -2,11 +2,6 @@
 
 import { useState, useEffect } from 'react';
 
-/**
- * Hook to fetch and manage canvas state from database
- * @param {string} userId - The user ID
- * @returns {Object} { nodes, edges, viewport, isLoading, error }
- */
 export function useCanvasState(userId, boardId) {
     const [state, setState] = useState({
         nodes: null,
@@ -17,7 +12,6 @@ export function useCanvasState(userId, boardId) {
     });
 
     useEffect(() => {
-        // Reset state immediately when switching context to prevent stale data
         setState(prev => ({ 
             ...prev, 
             nodes: null, 

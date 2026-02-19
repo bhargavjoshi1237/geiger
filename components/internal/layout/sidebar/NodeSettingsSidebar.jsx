@@ -38,7 +38,7 @@ export default function NodeSettingsSidebar({
 
     if (selectedNode.type === "board" && selectedNode.data.boardId) {
       try {
-        const response = await fetch("/api/update-board", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/update-board`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

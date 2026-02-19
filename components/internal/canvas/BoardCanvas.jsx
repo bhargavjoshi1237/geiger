@@ -76,7 +76,7 @@ export default function BoardCanvas({
 
       if (type === "board") {
         try {
-          const response = await fetch("/api/create-board", {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/create-board`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: "Untitled Board" }),
@@ -107,7 +107,7 @@ export default function BoardCanvas({
 
       if (type === "document") {
         try {
-          const response = await fetch("/api/documents", {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/documents`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({}),

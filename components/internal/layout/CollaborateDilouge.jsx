@@ -209,7 +209,7 @@ export default function CollaborateDilouge({
   const startSession = async () => {
     setIsStarting(true);
     try {
-      const response = await fetch("/api/collab/create", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/collab/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nodes, edges }),
@@ -243,7 +243,7 @@ export default function CollaborateDilouge({
     setJoinError("");
 
     try {
-      const response = await fetch("/api/collab/lookup", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/collab/lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: sessionCodeInput.trim() }),
