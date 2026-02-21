@@ -9,10 +9,6 @@ export default async function DashboardLayout({ children, params }) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login')
-  }
-
   // Optional: Check if accessed ID matches user ID
   // if (id !== user.id) {
   //   redirect(`/${user.id}/home`) // example redirection
