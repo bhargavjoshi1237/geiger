@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquarePlus } from "lucide-react";
 import { SidebarShell } from "./SidebarPrimitives";
 import { ColorPlug } from "./plugs/ColorPlug";
-import { ReactionPlug } from "./plugs/ReactionPlug";
-import { ActionPlug } from "./plugs/ActionPlug";
 import { EditBoardNamePlug } from "./plugs/EditBoardNamePlug";
 import { BoardIconPlug } from "./plugs/BoardIconPlug";
+import { EditClockThemePlug } from "./plugs/clock/EditClockThemePlug";
 import EditBoardNameDialog from "./dialogs/EditBoardNameDialog";
 import EditBoardIconDialog from "./dialogs/EditBoardIconDialog";
+import EditClockThemeDialog from "./dialogs/clock/EditClockThemeDialog";
 import { toast } from "sonner";
 
 export default function NodeSettingsSidebar({
@@ -19,6 +18,7 @@ export default function NodeSettingsSidebar({
 }) {
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isEditIconOpen, setIsEditIconOpen] = useState(false);
+  const [isEditClockThemeOpen, setIsEditClockThemeOpen] = useState(false);
 
   if (!selectedNode) return null;
 
@@ -69,6 +69,10 @@ export default function NodeSettingsSidebar({
     });
   };
 
+  const handleSaveClockTheme = (themeData) => {
+    updateData({ ...themeData });
+  };
+
   return (
     <>
       <SidebarShell onBack={onBack} title="Node Settings">
@@ -82,21 +86,13 @@ export default function NodeSettingsSidebar({
           <BoardIconPlug onEdit={() => setIsEditIconOpen(true)} />
         )}
 
-        <ColorPlug
-          value={currentColor}
-          onChange={(color) => updateData({ backgroundColor: color })}
-          label="Card Color"
-        />
-
-        {selectedNode.type !== "board" && (
-          <ReactionPlug onReaction={handleAddReaction} />
-        )}
-
-        {selectedNode.type !== "board" && (
-          <ActionPlug
-            icon={MessageSquarePlus}
-            label="Comment"
-            onClick={() => console.log("Comment")}
+        {selectedNode.type === "clock" ? (
+          <EditClockThemePlug onEdit={() => setIsEditClockThemeOpen(true)} />
+        ) : (
+          <ColorPlug
+            value={currentColor}
+            onChange={(color) => updateData({ backgroundColor: color })}
+            label="Card Color"
           />
         )}
       </SidebarShell>
@@ -119,6 +115,15 @@ export default function NodeSettingsSidebar({
             onSave={handleSaveBoardIcon}
           />
         </>
+      )}
+
+      {selectedNode.type === "clock" && (
+        <EditClockThemeDialog
+          open={isEditClockThemeOpen}
+          onOpenChange={setIsEditClockThemeOpen}
+          initialData={selectedNode.data}
+          onSave={handleSaveClockTheme}
+        />
       )}
     </>
   );

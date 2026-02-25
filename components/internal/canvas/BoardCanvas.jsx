@@ -17,6 +17,7 @@ import BoardNode from "@/components/internal/nodes/BoardNode";
 import DocumentNode from "@/components/internal/nodes/DocumentNode";
 import ImageNode from "@/components/internal/nodes/ImageNode";
 import FileNode from "@/components/internal/nodes/FileNode";
+import ClockNode from "@/components/internal/nodes/clock/ClockNode";
 import "@xyflow/react/dist/style.css";
 
 export default function BoardCanvas({
@@ -76,11 +77,14 @@ export default function BoardCanvas({
 
       if (type === "board") {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/create-board`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: "Untitled Board" }),
-          });
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/create-board`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: "Untitled Board" }),
+            },
+          );
 
           if (!response.ok) throw new Error("Failed to create board");
 
@@ -107,11 +111,14 @@ export default function BoardCanvas({
 
       if (type === "document") {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/documents`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-          });
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/documents`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+            },
+          );
 
           if (!response.ok) throw new Error("Failed to create document");
           const docData = await response.json();
@@ -160,6 +167,22 @@ export default function BoardCanvas({
             src: null,
           },
           style: { width: 200, height: 80 },
+        };
+        setNodes((nds) => nds.concat(newNode));
+        return;
+      }
+
+      if (type === "clock") {
+        const newNode = {
+          id: `node-${Date.now()}`,
+          type: "clock",
+          position,
+          data: {
+            label: "Clock",
+            clockType: "analog",
+            backgroundColor: "#232323",
+          },
+          style: { width: 156, height: 156 },
         };
         setNodes((nds) => nds.concat(newNode));
         return;
@@ -242,6 +265,7 @@ export default function BoardCanvas({
       document: DocumentNode,
       image: ImageNode,
       file: FileNode,
+      clock: ClockNode,
     }),
     [],
   );
