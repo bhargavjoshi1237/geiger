@@ -130,7 +130,7 @@ const CustomNode = ({ id, data, selected, dragging }) => {
           {selected ? (
             <TextEditingTrait className="w-full h-full block">
               <textarea
-                className="w-full h-full p-4 text-start bg-transparent resize-none outline-none text-zinc-300 placeholder:text-zinc-600 placeholder:text-start font-sans"
+                className="w-full h-full p-4 bg-transparent resize-none outline-none text-zinc-300 placeholder:text-zinc-600 font-sans"
                 placeholder="Start typing..."
                 value={data.label || ""}
                 onChange={(evt) => {
@@ -149,6 +149,12 @@ const CustomNode = ({ id, data, selected, dragging }) => {
                     }),
                   );
                 }}
+                style={{
+                  fontWeight: data.bold ? "bold" : "normal",
+                  fontStyle: data.italic ? "italic" : "normal",
+                  textDecoration: data.underline ? "underline" : "none",
+                  textAlign: data.textAlign || "left",
+                }}
                 data-gramm="false"
                 data-gramm_editor="false"
                 data-enable-grammarly="false"
@@ -156,9 +162,15 @@ const CustomNode = ({ id, data, selected, dragging }) => {
             </TextEditingTrait>
           ) : (
             <p
-              className={`font-sans p-4 whitespace-pre-wrap text-start w-full ${
+              className={`font-sans p-4 whitespace-pre-wrap w-full ${
                 data.label ? "text-zinc-300" : "text-zinc-500"
               }`}
+              style={{
+                fontWeight: data.bold ? "bold" : "normal",
+                fontStyle: data.italic ? "italic" : "normal",
+                textDecoration: data.underline ? "underline" : "none",
+                textAlign: data.textAlign || "left",
+              }}
             >
               {data.label || "Start typing..."}
             </p>

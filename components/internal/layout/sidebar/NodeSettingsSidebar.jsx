@@ -6,6 +6,7 @@ import { ColorPlug } from "./plugs/ColorPlug";
 import { EditBoardNamePlug } from "./plugs/EditBoardNamePlug";
 import { BoardIconPlug } from "./plugs/BoardIconPlug";
 import { EditClockThemePlug } from "./plugs/clock/EditClockThemePlug";
+import { TextFormattingPlug } from "./plugs/TextFormattingPlug";
 import EditBoardNameDialog from "./dialogs/EditBoardNameDialog";
 import EditBoardIconDialog from "./dialogs/EditBoardIconDialog";
 import EditClockThemeDialog from "./dialogs/clock/EditClockThemeDialog";
@@ -93,6 +94,13 @@ export default function NodeSettingsSidebar({
             value={currentColor}
             onChange={(color) => updateData({ backgroundColor: color })}
             label="Card Color"
+          />
+        )}
+
+        {selectedNode.type === "custom" && (
+          <TextFormattingPlug
+            data={selectedNode.data}
+            onChange={(updates) => updateData(updates)}
           />
         )}
       </SidebarShell>
