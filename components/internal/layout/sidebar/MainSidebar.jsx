@@ -16,7 +16,6 @@ import {
   Upload,
   PenTool,
   File as FileIcon,
-  Clock,
   Calendar,
 } from "lucide-react";
 import { SidebarButton } from "./SidebarPrimitives";
@@ -68,12 +67,6 @@ export const MainSidebar = () => {
       <div className="w-full px-2 py-2">
         <div className="w-full h-[1px] bg-[#333333]/60"></div>
       </div>
-      <SidebarButton
-        icon={Clock}
-        label="Clock"
-        draggable
-        onDragStart={(event) => onDragStart(event, "clock")}
-      />
       <SidebarButton
         icon={Calendar}
         label="Calendar"

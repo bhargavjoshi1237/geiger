@@ -1,7 +1,36 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
+const PUBLIC_PATHS = new Set([
+  '/',
+  '/notes',
+  '/login',
+  '/notes/login',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/api/login',
+  '/notes/api/login',
+])
+
+function normalizePathname(pathname) {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1)
+  }
+
+  return pathname
+}
+
+function isStaticAssetPath(pathname) {
+  return /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml|json|woff|woff2|ttf|otf)$/i.test(pathname)
+}
+
 export async function updateSession(request) {
+  const pathname = normalizePathname(request.nextUrl.pathname)
+
+  if (isStaticAssetPath(pathname)) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -34,7 +63,12 @@ export async function updateSession(request) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    const pathname = request.nextUrl.pathname
+    const isPublicPath = PUBLIC_PATHS.has(pathname)
+
+    if (isPublicPath) {
+      return supabaseResponse
+    }
+
     const isApiRequest = pathname.includes('/api/') || pathname.endsWith('/api')
 
     if (isApiRequest) {

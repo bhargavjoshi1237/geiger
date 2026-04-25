@@ -337,7 +337,7 @@ export default function DownloadBoardDialog({
                     ${
                       isSelected
                         ? `${fmt.accent} border-opacity-100`
-                        : "bg-zinc-900/40 border-zinc-800 hover:bg-zinc-800/60 hover:border-zinc-700"
+                        : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800/60 hover:border-zinc-700"
                     }`}
                 >
                   <div

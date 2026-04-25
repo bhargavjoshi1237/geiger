@@ -126,6 +126,7 @@ export default function GeneralSettings({ settings, onSettingsChange }) {
             onCheckedChange={(checked) =>
               onSettingsChange?.("showClock", checked)
             }
+            disabled
           />
         </div>
 

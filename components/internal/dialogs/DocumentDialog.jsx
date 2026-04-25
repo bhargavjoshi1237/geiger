@@ -93,7 +93,7 @@ const Toolbar = ({ editor }) => {
 const DocumentEditor = ({ documentId, onClose, isOpen }) => {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState("saved"); // 'saved', 'saving', 'unsaved'
+  const [saveStatus, setSaveStatus] = useState("saved"); // 'saved', 'saving', 'unsaved', 'local'
 
   const contentRef = useRef(content);
   const isSavingRef = useRef(false);
@@ -101,6 +101,31 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
 
   // Fetch initial content
   useEffect(() => {
+    if (!isOpen) return;
+
+    if (!documentId) {
+      const localDoc = {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: "This is a local playground document. Changes stay in this session only.",
+              },
+            ],
+          },
+        ],
+      };
+
+      setContent(localDoc);
+      contentRef.current = localDoc;
+      setSaveStatus("local");
+      setLoading(false);
+      return;
+    }
+
     if (isOpen && documentId) {
       setLoading(true);
       fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/documents?id=${documentId}`)
@@ -119,7 +144,7 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
         .finally(() => {
           setLoading(false);
         });
-    }
+      }
   }, [isOpen, documentId]);
 
   const saveDocument = async (currentContent) => {
@@ -211,6 +236,11 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
 
   // Refined save document logic to handle queueing
   const performSave = async (contentToSave) => {
+    if (!documentId) {
+      setSaveStatus("local");
+      return;
+    }
+
     if (isSavingRef.current) {
       pendingSaveRef.current = true;
       return;
@@ -246,7 +276,7 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
       let timeoutId = null;
       return (newContent) => {
         contentRef.current = newContent;
-        setSaveStatus("unsaved");
+        setSaveStatus(documentId ? "unsaved" : "local");
         if (timeoutId) clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
           performSave(contentRef.current);
@@ -291,6 +321,9 @@ const DocumentEditor = ({ documentId, onClose, isOpen }) => {
               )}
               {saveStatus === "unsaved" && (
                 <span className="text-zinc-500">Unsaved changes...</span>
+              )}
+              {saveStatus === "local" && (
+                <span className="text-zinc-500">Local playground</span>
               )}
             </div>
           </div>

@@ -11,6 +11,11 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const contentLength = request.headers.get('content-length');
+        if (!contentLength || contentLength === '0') {
+            return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+        }
+
         const body = await request.json();
         const { nodes, edges, viewport, boardId } = body;
 
