@@ -103,8 +103,8 @@ export default async function NotesLandingPage() {
   } = await supabase.auth.getUser();
 
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-  const notesRoot = basePath || "/notes";
-  const dashOrigin = (process.env.NEXT_PUBLIC_DASH_ORIGIN || "https://geiger.studio").replace(/\/$/, "");
+  const notesRoot = basePath.replace("/notes", "") || "/notes";
+  const dashOrigin = (process.env.NEXT_PUBLIC_DASH_ORIGIN).replace(/\/$/, "");
   const boardHref = user ? `${notesRoot}/${user.id}/home` : "";
   const loginHref = `${dashOrigin}/login?next=${encodeURIComponent(notesRoot)}`;
   const profileImage = user?.id
