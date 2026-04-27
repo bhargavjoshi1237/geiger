@@ -104,10 +104,10 @@ export default async function NotesLandingPage() {
 
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
   const notesRoot = basePath.replace("/notes", "") || "/notes";
-  const dashOrigin = (process.env.NEXT_PUBLIC_DASH_ORIGIN).replace(/\/$/, "");
+  const dashOrigin = (process.env.NEXT_PUBLIC_DASH_ORIGIN || "").replace(/\/$/, "");
   const boardHref = user ? `${notesRoot}/${user.id}/home` : "";
   const loginHref = `${dashOrigin}/login?next=${encodeURIComponent(notesRoot)}`;
-  const profileImage = user?.id
+  const profileImage = user?.id && process.env.NEXT_PUBLIC_SUPABASE_URL
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/pfp/${user.id}/latest.jpg`
     : "";
   const profileName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "User";
